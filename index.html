@@ -2,7 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
 
     <title>Ecatepec Music</title>
     <link
@@ -24,10 +33,6 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
     <style>
-      * {
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-      }
       @font-face {
         font-display: swap;
         font-family: "Spotify Mix";
@@ -65,6 +70,7 @@
         --secondary-foreground: oklch(0.92 0 0);
         --sidebar-width: 280px;
         --player-height: 90px;
+        --mobile-player-height: 140px;
         --orb-1: #474747e6;
         --orb-2: #ffffffeb;
         --orb-3: #d3d3d3cc;
@@ -120,11 +126,12 @@
           radial-gradient(circle at 50% 80%, var(--orb-3) 0%, transparent 50%),
           radial-gradient(circle at 30% 70%, var(--orb-4) 0%, transparent 50%);
         filter: blur(80px) brightness(0.5) saturate(2.5);
-        opacity: 0.85;
+        opacity: 0;
         z-index: 0;
         pointer-events: none;
         animation: orbPulse 8s ease-in-out infinite;
-        transition: opacity 900ms cubic-bezier(0.2, 0.9, 0.2, 1);
+        transition: opacity 900ms cubic-bezier(0.2, 0.9, 0.2, 1),
+          filter 900ms cubic-bezier(0.2, 0.9, 0.2, 1);
       }
 
       @keyframes orbPulse {
@@ -137,6 +144,11 @@
           opacity: 0.6;
           transform: scale(1.1) rotate(5deg);
         }
+      }
+
+      #dynamicBg.playing {
+        opacity: 0.85;
+        filter: blur(80px) brightness(0.7) saturate(3);
       }
 
       .rhythm-glow {
@@ -381,6 +393,28 @@
         justify-content: center;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       }
+      #searchInput {
+        color: var(--muted-foreground);
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: border 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      #searchInput::placeholder {
+        color: var(--muted-foreground);
+      }
+
+      #searchInput:focus {
+        color: var(--muted-foreground);
+      }
+
+      #searchInput {
+        -webkit-appearance: none;
+        appearance: none;
+
+        color: var(--muted-foreground);
+      }
 
       .header-btn i {
         width: 20px;
@@ -556,10 +590,11 @@
       }
 
       .lyrics-line {
-        font-family: "Spotify Mix", sans-serif;
-        font-size: 2rem;
-        font-weight: 600;
-        line-height: 1.5;
+        font-family: "SF Pro Text", sans-serif;
+        font-size: 3rem;
+        line-height: 1.1;
+        letter-spacing: -0.023em;
+        font-weight: 700;
         color: rgba(255, 255, 255, 0.35);
         margin: 16px 0;
         padding: 12px 20px;
@@ -572,20 +607,92 @@
 
       .lyrics-line.active {
         color: #ffffff;
-        font-size: 2.5rem;
+        font-size: 2.8rem;
         font-weight: 700;
         transform: translateX(12px);
         text-shadow: 0 2px 20px rgba(255, 255, 255, 0.3);
       }
 
       .lyrics-line.active ~ .lyrics-line {
-        color: rgba(255, 255, 255, 0.25);
+        color: rgb(255, 255, 255);
         opacity: 0.6;
       }
 
       .lyrics-line:hover {
         color: rgba(255, 255, 255, 0.7);
         transform: translateX(8px);
+      }
+      .lyrics-line .line-text {
+        display: inline;
+      }
+      .lyrics-line .word {
+        display: inline-block;
+        margin: 0 4px;
+
+        will-change: transform, filter;
+        transform: translateZ(0);
+
+        transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+          color 0.35s ease, text-shadow 0.35s ease, filter 0.35s ease,
+          opacity 0.35s ease;
+
+        color: rgba(255, 255, 255, 0.75);
+      }
+
+      .lyrics-line.active .word.active-word {
+        transform: translateY(-12px) scale(1.08);
+        color: #fff;
+        font-weight: 800;
+
+        text-shadow: 0 2px 12px rgba(255, 255, 255, 0.35),
+          0 8px 30px rgba(255, 255, 255, 0.22);
+
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.35));
+      }
+
+      .lyrics-line.active .word.active-word + .word,
+      .lyrics-line.active .word:has(+ .active-word) {
+        transform: translateY(-4px) scale(1.03);
+        opacity: 0.92;
+
+        transition-duration: 0.75s;
+        transition-delay: 50ms;
+      }
+      .sync-button {
+        position: fixed;
+        bottom: 120px;
+        right: 32px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid var(--border);
+        color: var(--background);
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 250;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 0;
+        transform: scale(0.8);
+      }
+
+      .sync-button.visible {
+        display: flex;
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .sync-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+      }
+
+      .sync-button i {
+        width: 24px;
+        height: 24px;
       }
 
       .lyrics-fallback {
@@ -739,7 +846,7 @@
       }
 
       .control-btn.active {
-        color: var(--color-1);
+        color: #fff;
       }
 
       .control-play {
@@ -783,13 +890,12 @@
         -webkit-appearance: none;
         appearance: none;
         width: 100%;
-        height: 16px; /* room for thumb */
+        height: 16px;
         background: transparent;
         cursor: pointer;
-        --p: 50%; /* filled percent */
+        --p: 50%;
       }
 
-      /* TRACK */
       .progress-bar::-webkit-slider-runnable-track {
         height: 4px;
         border-radius: 2px;
@@ -816,13 +922,11 @@
         transition: height 0.2s ease;
       }
 
-      /* HOVER GROW */
       .progress-bar:hover::-webkit-slider-runnable-track,
       .progress-bar:hover::-moz-range-track {
         height: 6px;
       }
 
-      /* THUMB */
       .progress-bar::-webkit-slider-thumb {
         -webkit-appearance: none;
         width: 12px;
@@ -1324,25 +1428,212 @@
         }
       }
 
+      .mobile-header,
+      .mobile-overlay {
+        display: none;
+      }
+
+      @media (max-width: 768px) {
+        .mobile-header {
+          display: flex;
+        }
+      }
+
       @media (max-width: 768px) {
         :root {
           --sidebar-width: 0px;
+          --player-height: var(--mobile-player-height);
+        }
+
+        body {
+          overflow-y: auto;
+          height: auto;
+          min-height: 100vh;
+        }
+
+        .desktop-container {
+          height: calc(100vh - var(--mobile-player-height));
+          flex-direction: column;
         }
 
         .sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: var(--mobile-player-height);
+          width: 280px;
           transform: translateX(-100%);
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 100;
+          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar.mobile-open {
+          transform: translateX(0);
+        }
+
+        .mobile-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          background: var(--card);
+          border-bottom: 1px solid var(--border);
+          position: sticky;
+          top: 0;
+          z-index: 10;
+        }
+
+        .mobile-menu-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          background: transparent;
+          border: none;
+          color: var(--foreground);
+          cursor: pointer;
+          border-radius: 8px;
+          transition: background 0.2s;
+        }
+
+        .mobile-menu-btn:active {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-menu-btn i {
+          width: 24px;
+          height: 24px;
+        }
+
+        .mobile-logo {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 18px;
+          font-weight: 700;
+          font-family: "Spotify Mix", sans-serif;
+        }
+
+        .mobile-logo i {
+          width: 24px;
+          height: 24px;
+        }
+
+        .mobile-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.7);
+          z-index: 99;
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+
+        .mobile-overlay.visible {
+          display: block;
+          opacity: 1;
+        }
+
+        .main-content {
+          flex: 1;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         .main-header {
           padding: 16px;
+          position: sticky;
+          top: 0;
+          background: var(--background);
+          z-index: 5;
+        }
+
+        .search-bar {
+          max-width: 100%;
         }
 
         .content-wrapper {
           padding: 16px;
+          padding-bottom: 32px;
+        }
+
+        .player-bar {
+          height: var(--mobile-player-height);
+          flex-direction: column;
+          padding: 12px 16px;
+          gap: 8px;
+        }
+
+        .player-left {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .player-artwork {
+          width: 56px;
+          height: 56px;
+        }
+
+        .player-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .player-title {
+          font-size: 14px;
+        }
+
+        .player-artist {
+          font-size: 12px;
         }
 
         .player-center {
-          flex: 1.5;
+          width: 100%;
+          flex: unset;
+          order: 3;
+        }
+
+        .player-controls {
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+
+        .control-btn {
+          width: 36px;
+          height: 36px;
+        }
+
+        .control-btn i {
+          width: 20px;
+          height: 20px;
+        }
+
+        .control-play {
+          width: 44px;
+          height: 44px;
+        }
+
+        .control-play i {
+          width: 24px;
+          height: 24px;
+        }
+
+        .player-progress-wrapper {
+          gap: 8px;
+        }
+
+        .time-label {
+          font-size: 11px;
+          min-width: 36px;
+        }
+
+        .player-right {
+          position: absolute;
+          top: 12px;
+          right: 16px;
+          gap: 4px;
         }
 
         .volume-control {
@@ -1354,24 +1645,236 @@
           gap: 12px;
         }
 
+        .result-card {
+          padding: 12px;
+        }
+
+        .result-artwork {
+          height: 140px;
+        }
+
+        .result-title {
+          font-size: 13px;
+          margin-top: 8px;
+        }
+
+        .result-artist {
+          font-size: 11px;
+        }
+
+        .lyrics-container {
+          padding: 20px 16px;
+        }
+
         .lyrics-line {
-          font-size: 1.5rem;
+          font-size: 1.3rem;
+          padding: 8px 0;
         }
 
         .lyrics-line.active {
-          font-size: 1.8rem;
+          font-size: 1.6rem;
+        }
+
+        .clean-mode {
+          padding: 20px;
         }
 
         .clean-artwork {
-          width: 280px;
-          height: 280px;
+          width: min(280px, 80vw);
+          height: min(280px, 80vw);
+        }
+
+        .clean-title {
+          font-size: 20px;
+        }
+
+        .clean-artist {
+          font-size: 14px;
         }
 
         .clean-controls {
-          left: 20px;
-          right: 20px;
-          bottom: 20px;
+          left: 16px;
+          right: 16px;
+          bottom: 16px;
           width: auto;
+          padding: 16px;
+        }
+
+        .clean-progress-bar {
+          height: 4px;
+        }
+
+        .main-content,
+        .sidebar,
+        .lyrics-scroll-container {
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+        }
+
+        button,
+        .nav-item,
+        .result-card,
+        .playlist-item {
+          min-height: 44px;
+        }
+
+        .desktop-only {
+          display: none !important;
+        }
+
+        .tip-container {
+          bottom: calc(var(--mobile-player-height) + 16px);
+          left: 16px;
+          right: 16px;
+          max-width: none;
+        }
+
+        .modal-content {
+          margin: 20px;
+          padding: 24px;
+          max-width: calc(100% - 40px);
+        }
+
+        .custom-dropdown {
+          left: 50% !important;
+          transform: translateX(-50%);
+          width: calc(100% - 32px);
+          max-width: 300px;
+        }
+
+        .header-btn {
+          padding: 8px 12px;
+        }
+
+        .search-results-section {
+          padding-bottom: 16px;
+        }
+
+        #visualizer {
+          height: 60px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .mobile-logo span {
+          font-size: 16px;
+        }
+
+        .results-grid {
+          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+          gap: 10px;
+        }
+
+        .result-artwork {
+          height: 120px;
+        }
+
+        .result-title {
+          font-size: 12px;
+        }
+
+        .result-artist {
+          font-size: 10px;
+        }
+
+        .lyrics-line {
+          font-size: 1.1rem;
+        }
+
+        .lyrics-line.active {
+          font-size: 1.4rem;
+        }
+
+        .clean-artwork {
+          width: min(240px, 75vw);
+          height: min(240px, 75vw);
+        }
+
+        .player-controls {
+          gap: 4px;
+        }
+
+        .control-btn {
+          width: 32px;
+          height: 32px;
+        }
+
+        .control-play {
+          width: 40px;
+          height: 40px;
+        }
+      }
+
+      @media (max-width: 768px) and (orientation: landscape) {
+        .desktop-container {
+          height: calc(100vh - 90px);
+        }
+
+        .player-bar {
+          height: 90px;
+          flex-direction: row;
+        }
+
+        @media (max-width: 768px) {
+          body {
+            overscroll-behavior-y: contain;
+          }
+
+          * {
+            -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+          }
+
+          .main-content,
+          .sidebar,
+          .lyrics-scroll-container,
+          .clean-lyrics {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+          }
+
+          input[type="text"],
+          input[type="search"],
+          input[type="range"],
+          textarea {
+            font-size: 16px;
+          }
+
+          button:active,
+          .control-btn:active,
+          .result-card:active {
+            transform: scale(0.95);
+            transition: transform 0.1s;
+          }
+
+          ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+          }
+
+          .mobile-header {
+            padding-top: max(12px, env(safe-area-inset-top));
+            padding-left: max(16px, env(safe-area-inset-left));
+            padding-right: max(16px, env(safe-area-inset-right));
+          }
+
+          .player-bar {
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            padding-left: max(16px, env(safe-area-inset-left));
+            padding-right: max(16px, env(safe-area-inset-right));
+          }
+        }
+        .player-center {
+          order: 0;
+          flex: 1;
+        }
+
+        .player-controls {
+          margin-bottom: 4px;
+        }
+
+        .clean-artwork {
+          width: min(200px, 40vh);
+          height: min(200px, 40vh);
         }
       }
     </style>
@@ -1380,6 +1883,18 @@
     <div id="dynamicBg"></div>
     <div class="rhythm-glow" id="rhythmGlow"></div>
 
+    <div class="mobile-header" style="display: none">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+        <i data-lucide="menu"></i>
+      </button>
+      <div class="mobile-logo">
+        <i data-lucide="music"></i>
+        <span>Ecatepec</span>
+      </div>
+      <div style="width: 40px"></div>
+    </div>
+
+    <div class="mobile-overlay" id="mobileOverlay"></div>
     <div class="desktop-container">
       <aside class="sidebar">
         <div class="sidebar-header">
@@ -1402,10 +1917,11 @@
           </button>
           <div class="sidebar-divider"></div>
           <small>
-            Dynamic background doesnt work with tidal due to cross origin issues
+            Dynamic backgrounds are unavailable with Tidal due to crossorigin
+            restrictions.
           </small>
           <div class="sidebar-footer">
-            <small> Credits to santiago </small>
+            <small>Created by Santiago</small>
           </div>
         </nav>
       </aside>
@@ -1502,9 +2018,7 @@
         <button id="lyricsToggle" class="control-btn" title="Lyrics (l)">
           <i data-lucide="mic-vocal"></i>
         </button>
-        <button id="queueButton" class="control-btn" title="Queue">
-          <i data-lucide="list-music"></i>
-        </button>
+
         <div class="volume-control">
           <button id="muteButton" class="control-btn" title="Volume (m)">
             <i data-lucide="volume-2"></i>
@@ -1548,6 +2062,9 @@
       </div>
       <div class="tip-text" id="tipText"></div>
     </div>
+    <button class="sync-button" id="syncButton" title="Jump to current line">
+      <i data-lucide="fast-forward"></i>
+    </button>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const CONSTANTS = {
@@ -1600,6 +2117,9 @@
           lastRhythmPulse: 0,
           currentTipIndex: 0,
           tipsShown: new Set(),
+          isUserScrolling: false,
+          scrollTimeout: null,
+          lastScrollTime: 0,
         };
 
         const elements = {
@@ -1653,6 +2173,7 @@
           tipTitle: document.getElementById("tipTitle"),
           tipText: document.getElementById("tipText"),
           contentWrapper: document.getElementById("contentWrapper"),
+          syncButton: document.getElementById("syncButton"),
         };
 
         const audioContext = {
@@ -2010,7 +2531,6 @@
           const val = parseFloat(value) || 0;
           const percentage = ((val - min) / (max - min)) * 100;
 
-          // Update the CSS variable for the visual fill
           elements.progressBar.style.setProperty("--p", percentage + "%");
 
           if (elements.cleanProgressBar) {
@@ -2032,26 +2552,21 @@
 
         function proxifyImageUrl(url) {
           if (!url) return null;
-          // Don't proxy if already a data URL or blob
           if (url.startsWith("data:") || url.startsWith("blob:")) return url;
 
           try {
             const urlObj = new URL(url);
-            // Don't proxy same-origin images
             if (urlObj.hostname === window.location.hostname) return url;
-            // Don't proxy localhost or 127.0.0.1
             if (
               urlObj.hostname === "localhost" ||
               urlObj.hostname === "127.0.0.1"
             )
               return url;
 
-            // Only use proxy if CORS_PROXY is actually set
             if (CONSTANTS.CORS_PROXY && CONSTANTS.CORS_PROXY.trim() !== "") {
               return `${CONSTANTS.CORS_PROXY}${encodeURIComponent(url)}`;
             }
 
-            // Otherwise return original URL
             return url;
           } catch {
             return url;
@@ -2060,7 +2575,6 @@
 
         function animateMusicProgressBar() {
           if (state.isSeeking) {
-            // If user is seeking, don't update but keep the loop going
             requestAnimationFrame(animateMusicProgressBar);
             return;
           }
@@ -2075,7 +2589,6 @@
             updateProgressBar(currentTimeValue);
           }
 
-          // Keep the loop going while audio is playing
           if (!elements.audio.paused) {
             requestAnimationFrame(animateMusicProgressBar);
           }
@@ -2109,7 +2622,6 @@
             loadAndPlayTrack(state.currentTrackIndex - 1);
           }
         }
-
         function loadAndPlayTrack(index) {
           if (index < 0 || index >= state.trackQueue.length) return;
 
@@ -2127,15 +2639,17 @@
           newItem?.classList.add("active");
 
           updateTrackUI(track);
-          loadArtwork(track);
-          loadStreamUrl(track);
 
           state.lyricsData = null;
           elements.lyricsContainer.innerHTML = "";
           elements.lyricsFallback.textContent = "";
           if (elements.cleanLyrics) elements.cleanLyrics.innerHTML = "";
-        }
 
+          fetchLyricsForTrack(track);
+
+          loadArtwork(track);
+          loadStreamUrl(track);
+        }
         function updateTrackUI(track) {
           const title =
             track.service === "tidal" ? "Loading track..." : track.title;
@@ -2156,7 +2670,6 @@
           updateProgressBar(0);
           updatePlayPauseIcon(false);
         }
-
         function loadArtwork(track) {
           [elements.playerArtwork, elements.cleanArtwork].forEach(
             (container) => {
@@ -2169,45 +2682,49 @@
           );
 
           if (track.artwork) {
-            const img = document.createElement("img");
-            img.crossOrigin = "anonymous";
-            img.src = track.artwork;
-            img.onerror = () => {
-              // Don't try to proxy if CORS_PROXY is empty
-              if (CONSTANTS.CORS_PROXY && CONSTANTS.CORS_PROXY.trim() !== "") {
-                const proxiedUrl = proxifyImageUrl(track.artwork);
-                if (proxiedUrl !== track.artwork) {
-                  img.src = proxiedUrl;
-                  img.onerror = () => handleArtworkError(track);
-                } else {
-                  handleArtworkError(track);
-                }
-              } else {
-                // No proxy available, just show the fallback icon
-                handleArtworkError(track);
-              }
+            const visibleImg = document.createElement("img");
+            visibleImg.src = track.artwork;
+
+            visibleImg.onerror = () => {
+              handleArtworkError(track);
             };
 
-            img.onload = () => {
-              img.classList.add("loaded");
-              applyGradientFromImage(img);
-              if (state.lyricsVisible || state.cleanModeActive) {
-                const currentTrack = state.trackQueue[state.currentTrackIndex];
-                if (currentTrack) fetchLyricsForTrack(currentTrack);
-              }
+            visibleImg.onload = () => {
+              visibleImg.classList.add("loaded");
+
+              const hiddenImg = document.createElement("img");
+              hiddenImg.crossOrigin = "anonymous";
+              hiddenImg.src = track.artwork;
+              hiddenImg.style.display = "none";
+              hiddenImg.style.position = "absolute";
+              hiddenImg.style.opacity = "0";
+              hiddenImg.style.pointerEvents = "none";
+
+              hiddenImg.onload = () => {
+                applyGradientFromImage(hiddenImg);
+                setTimeout(() => hiddenImg.remove(), 100);
+              };
+
+              hiddenImg.onerror = () => {
+                applyGradientFromImage(visibleImg);
+                hiddenImg.remove();
+              };
+
+              document.body.appendChild(hiddenImg);
             };
 
             if (elements.playerArtwork) {
               elements.playerArtwork.insertBefore(
-                img,
+                visibleImg,
                 elements.playerArtwork.firstChild,
               );
             }
+
             if (elements.cleanArtwork) {
-              const cleanImg = img.cloneNode();
-              cleanImg.crossOrigin = "anonymous";
+              const cleanImg = visibleImg.cloneNode();
               cleanImg.src = track.artwork;
               cleanImg.onload = () => cleanImg.classList.add("loaded");
+              cleanImg.onerror = () => handleArtworkError(track);
               elements.cleanArtwork.insertBefore(
                 cleanImg,
                 elements.cleanArtwork.firstChild,
@@ -2382,7 +2899,7 @@
               id: result.url.split("/").pop(),
               service: "soundcloud",
             }));
-            return { items, hasMore: data.hasMore || false }; // Fixed: actually return the items and hasMore
+            return { items, hasMore: data.hasMore || false };
           }
           return { items: [], hasMore: false };
         }
@@ -2514,8 +3031,6 @@
               "The dog ate the lyrics",
               "Lyrics not found. Have you tried turning it off and on again?",
               "The artist forgot to write the lyrics down",
-              "Lyrics are on a coffee break",
-              "404 Lyrics not found",
               "The lyrics went out for cigarettes and never came back",
               "Allegedly, there are no lyrics",
               "The lyrics are on another app",
@@ -2745,9 +3260,24 @@
             element.className = "lyrics-line";
             element.dataset.index = String(index);
             element.dataset.time = String(line.time);
-            element.innerHTML = `<div class="line-text">${escapeHtml(
-              line.text || "",
-            )}</div>`;
+
+            const words = (line.text || "").split(/(\s+)/);
+            const lineTextDiv = document.createElement("div");
+            lineTextDiv.className = "line-text";
+
+            words.forEach((word, wordIndex) => {
+              if (word.trim()) {
+                const wordSpan = document.createElement("span");
+                wordSpan.className = "word";
+                wordSpan.dataset.wordIndex = String(wordIndex);
+                wordSpan.textContent = word;
+                lineTextDiv.appendChild(wordSpan);
+              } else {
+                lineTextDiv.appendChild(document.createTextNode(word));
+              }
+            });
+
+            element.appendChild(lineTextDiv);
 
             element.addEventListener("click", () => {
               if (!Number.isNaN(line.time)) {
@@ -2815,28 +3345,108 @@
 
             containers.forEach((container) => {
               const allLines = container.querySelectorAll(".lyrics-line");
-              allLines.forEach((line) => line.classList.remove("active"));
+              allLines.forEach((line) => {
+                line.classList.remove("active");
+
+                line
+                  .querySelectorAll(".word")
+                  .forEach((w) => w.classList.remove("active-word"));
+              });
 
               const activeLine = container.querySelector(
                 `.lyrics-line[data-index="${index}"]`,
               );
+
               if (activeLine) {
                 activeLine.classList.add("active");
-                try {
-                  activeLine.scrollIntoView({
-                    block: "center",
-                    behavior: "smooth",
-                  });
-                } catch (error) {
-                  console.warn("Scroll into view failed:", error);
+
+                if (!state.isUserScrolling) {
+                  try {
+                    activeLine.scrollIntoView({
+                      block: "center",
+                      behavior: "smooth",
+                    });
+                  } catch (error) {
+                    console.warn("Scroll into view failed:", error);
+                  }
                 }
               }
             });
 
             state.activeLyricIndex = index;
           }
+
+          animateWordsInActiveLine(index, currentTime);
         }
 
+        function animateWordsInActiveLine(lineIndex, currentTime) {
+          const containers = [
+            elements.lyricsContainer,
+            elements.cleanLyrics,
+          ].filter(Boolean);
+
+          containers.forEach((container) => {
+            const activeLine = container.querySelector(
+              `.lyrics-line[data-index="${lineIndex}"]`,
+            );
+            if (!activeLine) return;
+
+            const words = activeLine.querySelectorAll(".word");
+            if (words.length === 0) return;
+
+            const lineStartTime = parseFloat(activeLine.dataset.time);
+            const nextLineIndex = lineIndex + 1;
+            const nextLine = container.querySelector(
+              `.lyrics-line[data-index="${nextLineIndex}"]`,
+            );
+            const lineEndTime = nextLine
+              ? parseFloat(nextLine.dataset.time)
+              : lineStartTime + 5;
+
+            const lineDuration = lineEndTime - lineStartTime;
+            const timePerWord = lineDuration / words.length;
+            const timeSinceLineStart = currentTime - lineStartTime;
+
+            const activeWordIndex = Math.floor(
+              timeSinceLineStart / timePerWord,
+            );
+
+            words.forEach((word, idx) => {
+              if (idx === activeWordIndex) {
+                word.classList.add("active-word");
+              } else {
+                word.classList.remove("active-word");
+              }
+            });
+          });
+        }
+
+        function setupScrollDetection() {
+          const scrollContainers = [
+            elements.lyricsScrollContainer,
+            elements.cleanLyrics,
+          ].filter(Boolean);
+
+          scrollContainers.forEach((container) => {
+            container.addEventListener("scroll", () => {
+              const now = Date.now();
+              state.lastScrollTime = now;
+
+              if (!state.isUserScrolling) {
+                state.isUserScrolling = true;
+                elements.syncButton?.classList.add("visible");
+              }
+
+              clearTimeout(state.scrollTimeout);
+              state.scrollTimeout = setTimeout(() => {
+                if (Date.now() - state.lastScrollTime >= 3000) {
+                  state.isUserScrolling = false;
+                  elements.syncButton?.classList.remove("visible");
+                }
+              }, 3000);
+            });
+          });
+        }
         function karaokeLoop() {
           updateKaraokeOnce();
           karaokeRaf = requestAnimationFrame(karaokeLoop);
@@ -2873,6 +3483,26 @@
         elements.lyricsToggle?.addEventListener("click", toggleLyricsView);
         elements.cleanModeToggle?.addEventListener("click", toggleCleanMode);
         elements.cleanModeExit?.addEventListener("click", toggleCleanMode);
+        elements.syncButton?.addEventListener("click", () => {
+          state.isUserScrolling = false;
+          elements.syncButton?.classList.remove("visible");
+
+          const containers = [
+            elements.lyricsContainer,
+            elements.cleanLyrics,
+          ].filter(Boolean);
+          containers.forEach((container) => {
+            const activeLine = container.querySelector(
+              `.lyrics-line[data-index="${state.activeLyricIndex}"]`,
+            );
+            if (activeLine) {
+              activeLine.scrollIntoView({
+                block: "center",
+                behavior: "smooth",
+              });
+            }
+          });
+        });
 
         elements.muteButton?.addEventListener("click", () => {
           initializeAudioContext();
@@ -3078,6 +3708,7 @@
 
         elements.audio.addEventListener("play", () => {
           updatePlayPauseIcon(true);
+          document.getElementById("dynamicBg")?.classList.add("playing");
           if (audioContext.context?.state === "suspended") {
             audioContext.context.resume();
           }
@@ -3095,6 +3726,7 @@
 
         elements.audio.addEventListener("pause", () => {
           updatePlayPauseIcon(false);
+          document.getElementById("dynamicBg")?.classList.remove("playing");
           stopKaraokeLoop();
         });
 
@@ -3136,9 +3768,148 @@
         elements.progressBar.max = 100;
         lucide.createIcons();
         setTimeout(() => showNextTip(), 2000);
+        setupScrollDetection();
       });
 
       lucide.createIcons();
+
+      function setupMobileMenu() {
+        const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+        const mobileOverlay = document.getElementById("mobileOverlay");
+        const sidebar = document.querySelector(".sidebar");
+        const mobileHeader = document.querySelector(".mobile-header");
+
+        if (window.innerWidth <= 768) {
+          if (mobileHeader) mobileHeader.style.display = "flex";
+        }
+
+        function toggleMobileMenu() {
+          sidebar?.classList.toggle("mobile-open");
+          mobileOverlay?.classList.toggle("visible");
+          document.body.style.overflow = sidebar?.classList.contains(
+            "mobile-open",
+          )
+            ? "hidden"
+            : "";
+        }
+
+        function closeMobileMenu() {
+          sidebar?.classList.remove("mobile-open");
+          mobileOverlay?.classList.remove("visible");
+          document.body.style.overflow = "";
+        }
+
+        mobileMenuBtn?.addEventListener("click", toggleMobileMenu);
+        mobileOverlay?.addEventListener("click", closeMobileMenu);
+
+        document.querySelectorAll(".sidebar .nav-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            if (window.innerWidth <= 768) {
+              closeMobileMenu();
+            }
+          });
+        });
+
+        let resizeTimer;
+        window.addEventListener("resize", () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            if (window.innerWidth <= 768) {
+              if (mobileHeader) mobileHeader.style.display = "flex";
+            } else {
+              if (mobileHeader) mobileHeader.style.display = "none";
+              closeMobileMenu();
+            }
+          }, 250);
+        });
+
+        let touchStartY = 0;
+        sidebar?.addEventListener("touchstart", (e) => {
+          touchStartY = e.touches[0].clientY;
+        });
+
+        sidebar?.addEventListener(
+          "touchmove",
+          (e) => {
+            if (sidebar.classList.contains("mobile-open")) {
+              const touchY = e.touches[0].clientY;
+              const touchDelta = touchY - touchStartY;
+              const isScrollingUp = touchDelta > 0;
+              const isScrollingDown = touchDelta < 0;
+              const isAtTop = sidebar.scrollTop === 0;
+              const isAtBottom =
+                sidebar.scrollHeight - sidebar.scrollTop ===
+                sidebar.clientHeight;
+
+              if (
+                (isScrollingUp && isAtTop) ||
+                (isScrollingDown && isAtBottom)
+              ) {
+                e.preventDefault();
+              }
+            }
+          },
+          { passive: false },
+        );
+      }
+
+      function setupSwipeGestures() {
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        const threshold = 50;
+        const sidebar = document.querySelector(".sidebar");
+        const mobileOverlay = document.getElementById("mobileOverlay");
+
+        function handleSwipe() {
+          const swipeDistance = touchEndX - touchStartX;
+
+          if (Math.abs(swipeDistance) > threshold) {
+            if (
+              swipeDistance > 0 &&
+              touchStartX < 50 &&
+              window.innerWidth <= 768
+            ) {
+              sidebar?.classList.add("mobile-open");
+              mobileOverlay?.classList.add("visible");
+              document.body.style.overflow = "hidden";
+            } else if (
+              swipeDistance < 0 &&
+              sidebar?.classList.contains("mobile-open")
+            ) {
+              sidebar?.classList.remove("mobile-open");
+              mobileOverlay?.classList.remove("visible");
+              document.body.style.overflow = "";
+            }
+          }
+        }
+
+        document.addEventListener(
+          "touchstart",
+          (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+          },
+          { passive: true },
+        );
+
+        document.addEventListener(
+          "touchend",
+          (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+          },
+          { passive: true },
+        );
+      }
+
+      if ("ontouchstart" in window || navigator.maxTouchPoints > 0) {
+        document.addEventListener("DOMContentLoaded", () => {
+          setupMobileMenu();
+          setupSwipeGestures();
+        });
+      } else {
+        document.addEventListener("DOMContentLoaded", setupMobileMenu);
+      }
     </script>
   </body>
 </html>
